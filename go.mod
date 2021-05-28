@@ -10,8 +10,7 @@ require (
 )
 
 require (
-	github.com/chzyer/logex v1.1.10 // indirect
-	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
 	github.com/dustin/go-humanize v1.0.0
+	github.com/google/pprof v0.0.0-20210506205249-923b5ab0fc1a
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 )
