@@ -497,7 +497,7 @@ type typeHistogram struct {
 }
 
 func (h *typeHistogram) add(x gocore.Object, size int64) {
-	name := typeName(h.c, x)
+	name := gocore.TypeName(h.c, x)
 	b := h.m[name]
 	if b == nil {
 		b = &bucket{name: name, size: size, i: len(h.buckets)}
@@ -664,7 +664,7 @@ func runObjgraph(cmd *cobra.Command, args []string) {
 	c.ForEachObject(func(x gocore.Object) bool {
 		addr := c.Addr(x)
 		size := c.Size(x)
-		fmt.Fprintf(w, "o%x [label=\"%s\\n%d\"]\n", addr, typeName(c, x), size)
+		fmt.Fprintf(w, "o%x [label=\"%s\\n%d\"]\n", addr, gocore.TypeName(c, x), size)
 		c.ForEachPtr(x, func(i int64, y gocore.Object, j int64) bool {
 			fmt.Fprintf(w, "o%x -> o%x [label=\"%s\"", addr, c.Addr(y), fieldName(c, x, i))
 			if j != 0 {
@@ -708,7 +708,7 @@ func runTypegraph(cmd *cobra.Command, args []string) {
 	})
 	m := make(map[string]*blerp)
 	c.ForEachObject(func(x gocore.Object) bool {
-		name := typeName(c, x)
+		name := gocore.TypeName(c, x)
 		b := m[name]
 		if b == nil {
 			b = &blerp{e: make(map[string]*edge)}
@@ -716,7 +716,7 @@ func runTypegraph(cmd *cobra.Command, args []string) {
 		}
 		c.ForEachReversePtr(x, func(y gocore.Object, r *gocore.Root, _, _ int64) bool {
 			if r == nil {
-				name = typeName(c, y)
+				name = gocore.TypeName(c, y)
 				if b.e[name] == nil {
 					b.e[name] = &edge{}
 				}
@@ -791,7 +791,7 @@ func runPprof(cmd *cobra.Command, args []string) {
 
 	var f func(path []*profile.Location, x gocore.Object)
 	f = func(path []*profile.Location, x gocore.Object) {
-		name := typeName(c, x)
+		name := gocore.TypeName(c, x)
 		idx, ok := typeToIdx[name]
 		if !ok {
 			panic("hm")
@@ -876,7 +876,7 @@ func runObjects(cmd *cobra.Command, args []string) {
 		exitf("%v\n", err)
 	}
 	c.ForEachObject(func(x gocore.Object) bool {
-		fmt.Printf("%16x %s\n", c.Addr(x), typeName(c, x))
+		fmt.Printf("%16x %s\n", c.Addr(x), gocore.TypeName(c, x))
 		return true
 	})
 
@@ -937,7 +937,7 @@ func runReachable(cmd *cobra.Command, args []string) {
 
 				z := y
 				for {
-					fmt.Printf("%x %s", c.Addr(z), typeName(c, z))
+					fmt.Printf("%x %s", c.Addr(z), gocore.TypeName(c, z))
 					if z == obj {
 						fmt.Println()
 						break
@@ -1051,7 +1051,7 @@ func runPeek(cmd *cobra.Command, args []string) {
 		m: make(map[string]*bucket),
 	}
 	c.ForEachObject(func(x gocore.Object) bool {
-		typ := typeName(c, x)
+		typ := gocore.TypeName(c, x)
 		if typ == typName {
 			size := c.Size(x)
 			h.add(x, size)
@@ -1075,25 +1075,6 @@ func runPeek(cmd *cobra.Command, args []string) {
 	outH.sort()
 	outH.report(0, os.Stdout)
 
-}
-
-// typeName returns a string representing the type of this object.
-func typeName(c *gocore.Process, x gocore.Object) string {
-	size := c.Size(x)
-	typ, repeat := c.Type(x)
-	if typ == nil {
-		return fmt.Sprintf("unk%d", size)
-	}
-	name := typ.String()
-	n := size / typ.Size
-	if n > 1 {
-		if repeat < n {
-			name = fmt.Sprintf("[%d+%d?]%s", repeat, n-repeat, name)
-		} else {
-			name = fmt.Sprintf("[%d]%s", repeat, name)
-		}
-	}
-	return name
 }
 
 // fieldName returns the name of the field at offset off in x.
